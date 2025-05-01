@@ -1,4 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define CANVAS_WIDTH 10
+#define CANVAS_HEIGHT 20
 
 typedef enum
 {
@@ -31,6 +36,13 @@ typedef struct
     int size;
     char rotates[4][4][4];
 }Shape;
+
+typedef struct {
+    Color color;
+    ShapeId shape;
+    bool current;
+}Block;
+
 
 Shape shapes[7] = {
     {
@@ -185,7 +197,7 @@ Shape shapes[7] = {
                 {0, 0, 0}
             },
 
-                {{0, 1, 0},
+            {   {0, 1, 0},
                 {0, 1, 1},
                 {0, 1, 0}
             },
@@ -231,30 +243,48 @@ Shape shapes[7] = {
     },
 };
 
+void setBlock(Block* block, Color color, ShapeId shape, bool current)
+{
+    block->color = color;
+    block->shape = shape;
+    block->current = current;
+}
+
+void resetBlock(Block* block)
+{
+	block->color = BLACK;
+	block->shape = EMPTY;
+	block->current = false;
+}
+
 int main()
 {
-    Color cur;
-    // 幾種方塊 (目前只有 I)
-    for (int i = 0; i < 7; i++) {
-        //印出方塊
-        //第幾個樣式
-        for (int r = 0; r < 4; r++) {
-            // 二維陣列的對應輸出
-            for (int s = 0; s < shapes[i].size; s++) {
-                for (int t = 0; t < shapes[i].size; t++) {
-                    //如果是 0 就輸出白色
-                    if (shapes[i].rotates[r][s][t] == 0) {
-                        cur = WHITE;
-                    }
-                    else {
-                        cur = shapes[i].color;
-                    }
-                    printf("\033[%dm  \033[0m", cur);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
+	Block canva[CANVAS_HEIGHT][CANVAS_WIDTH];
+
+    for (int i = 0; i < CANVAS_HEIGHT; i++) {
+		for (int j = 0; j < CANVAS_WIDTH; j++) {
+			resetBlock(&canva[i][j]);
+		}
     }
+
+	Shape shape = shapes[1];
+
+	for (int i = 0; i < shape.size; i++) {
+		for (int j = 0; j < shape.size; j++) {
+			if (shape.rotates[0][i][j] == 1) {
+				setBlock(&canva[i][j], shape.color, shape.shape, true);
+			}
+		}
+	}
+
+    printf("\033[0;0H\n");
+	for (int i = 0; i < CANVAS_HEIGHT; i++) {
+		printf("|");
+		for (int j = 0; j < CANVAS_WIDTH; j++) {
+			printf("\033[%dm\u3000", canva[i][j].color);
+		}
+		printf("|\n");
+	}
+
     return 0;
 }
