@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include<time.h>
+#include<windows.h>
 
 #define CANVAS_WIDTH 10
 #define CANVAS_HEIGHT 20
@@ -277,13 +278,35 @@ void printCanvas(Block canvas[CANVAS_HEIGHT][CANVAS_WIDTH], State *state){
         printf("\033[0m");
 		printf("|\n");
 	}
+
+    printf("\033[%d;%dHNext:", 3, CANVAS_WIDTH * 2 + 5);
+
+    for (int i = 1; i <= 3; i++)
+    {
+        Shape shapeData = shapes[state->queue[i]];
+        for (int j = 0; j < 4; j++)
+        {
+            printf("\033[%d;%dH", i * 4 + j, CANVAS_WIDTH * 2 + 15);
+            for (int k = 0; k < 4; k++)
+            {
+                if (j < shapeData.size && k < shapeData.size && shapeData.rotates[0][j][k])
+                {
+                    printf("\x1b[%dm  ", shapeData.color);
+                }
+                else
+                {
+                    printf("\x1b[0m  ");
+                }
+            }
+        }
+    }
+    return;
 }
 
-bool move(Block canvas[CANVAS_HEIGHT][CANVAS_WIDTH], State *state, int originalX, int originalY, int originalRotate, int newX, int newY, int newRotate, ShapeId shapeId) {
+bool move(Block canvas[CANVAS_HEIGHT][CANVAS_WIDTH], int originalX, int originalY, int originalRotate, int newX, int newY, int newRotate, ShapeId shapeId) {
     Shape shapeData = shapes[shapeId];
     int size = shapeData.size;
     
-    // Check if the new position is valid
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
             if (shapeData.rotates[newRotate][i][j]) {
@@ -314,8 +337,20 @@ bool move(Block canvas[CANVAS_HEIGHT][CANVAS_WIDTH], State *state, int originalX
     }
 }
 void logic(Block canvas[CANVAS_HEIGHT][CANVAS_WIDTH], State *state){
-    if(move(canvas, state, state->x, state->y, state->rotate, state->x, state->y + 1, state->rotate, state->queue[0])){
+    if(move(canvas, state->x, state->y, state->rotate, state->x, state->y + 1, state->rotate, state->queue[0])){
         state->y++;
+    }
+    else{
+        state->score += clearLine(canvas);
+
+        state->x = CANVAS_WIDTH / 2;
+        state->y = 0;
+        state->rotate = 0;
+        state->falltime = 0;
+        state->queue[0] = state->queue[1];
+        state->queue[1] = state->queue[2];
+        state->queue[2] = state->queue[3];
+        state->queue[3] = rand() % 7;
     }
     return;
 }
@@ -336,11 +371,11 @@ int main()
         state.queue[i] = rand() % 7;
     }
 
-	Block canva[CANVAS_HEIGHT][CANVAS_WIDTH];
+	Block canvas[CANVAS_HEIGHT][CANVAS_WIDTH];
 
     for (int i = 0; i < CANVAS_HEIGHT; i++) {
 		for (int j = 0; j < CANVAS_WIDTH; j++) {
-			resetBlock(&canva[i][j]);
+			resetBlock(&canvas[i][j]);
 		}
     }
 
